@@ -3,7 +3,7 @@
 ## 概要
 地図上で範囲を指定し、森林の木の本数と材積を推定するアプリケーション
 
-**デモサイト**: https://uchu-roku.github.io/nitay_designtest/
+**デモサイト**: https://uchu-roku.github.io/nitay_design_verup/
 
 ## 機能
 ### A. 自由範囲指定モード

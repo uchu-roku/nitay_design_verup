@@ -94,7 +94,7 @@ muni_code = keycode[:4]  # 最初の4桁（正解）
 
 - **コミットID**: fd043df
 - **プッシュ日時**: 2026年2月4日 23:10
-- **デプロイ先**: https://uchu-roku.github.io/nitay_designtest/
+- **デプロイ先**: https://uchu-roku.github.io/nitay_design_verup/
 
 ## 確認事項
 

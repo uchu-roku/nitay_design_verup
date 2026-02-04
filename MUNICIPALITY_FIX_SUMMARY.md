@@ -37,7 +37,7 @@
 
 - **コミットID**: b5059c7
 - **プッシュ日時**: 2026年2月4日 22:50
-- **デプロイ先**: https://uchu-roku.github.io/nitay_designtest/
+- **デプロイ先**: https://uchu-roku.github.io/nitay_design_verup/
 
 ## 対応市町村
 
@@ -58,6 +58,6 @@
 
 GitHub Actions のビルドが完了後、以下を確認してください：
 
-1. サイトにアクセス: https://uchu-roku.github.io/nitay_designtest/
+1. サイトにアクセス: https://uchu-roku.github.io/nitay_design_verup/
 2. 市町村リストに「北斗市」「函館市」が表示されることを確認
 3. 各市町村を選択してデータが正しく読み込まれることを確認

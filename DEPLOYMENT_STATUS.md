@@ -4,7 +4,7 @@
 2026年2月4日 23:15
 
 ## 🌐 デプロイ先
-https://uchu-roku.github.io/nitay_designtest/
+https://uchu-roku.github.io/nitay_design_verup/
 
 ## ✅ 最新のデプロイ
 
@@ -78,7 +78,7 @@ https://github.com/uchu-roku/nitay_design_verup/actions
 
 ### 2. デプロイされたサイトの確認
 
-https://uchu-roku.github.io/nitay_designtest/
+https://uchu-roku.github.io/nitay_design_verup/
 
 #### 確認項目
 
