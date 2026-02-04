@@ -4,7 +4,7 @@ name: Deploy frontend to GitHub Pages
 on:
   push:
     branches:
-      - main   # main ブランチに push されたら実行
+      - clean-main   # clean-main ブランチに push されたら実行
 
 permissions:
   contents: read
@@ -34,8 +34,6 @@ jobs:
 
       - name: Build
         working-directory: ./frontend
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build
 
       - name: Upload artifact
