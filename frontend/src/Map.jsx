@@ -8,12 +8,12 @@ console.log('API_URL:', API_URL, 'VITE_API_URL:', import.meta.env.VITE_API_URL)
 
 // 層データを静的ファイルから取得する関数
 async function fetchLayersData(keycode) {
-  if (!keycode || keycode.length < 5) {
+  if (!keycode || keycode.length < 4) {
     return { layers: [] }
   }
   
-  // KEYCODEから市町村コードを抽出（3～5桁目）
-  const munCode = keycode.substring(2, 5)
+  // KEYCODEから市町村コードを抽出（1～4桁目: 振興局2桁+市町村2桁）
+  const munCode = keycode.substring(0, 4)
   
   const baseUrl = import.meta.env.BASE_URL || '/'
   const layersUrl = `${baseUrl}data/administrative/kitamirinsyou/split/layers_${munCode}.json`

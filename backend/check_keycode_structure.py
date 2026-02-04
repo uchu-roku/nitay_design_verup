@@ -1,27 +1,31 @@
 """
 KEYCODEの構造を確認
 """
-import pandas as pd
+import geopandas as gpd
 from pathlib import Path
 
-# 調査簿データを読み込み
-excel_path = Path(__file__).parent / "data" / "administrative" / "rinsyousigen" / "01渡島_調査簿データ.xlsx"
-df = pd.read_excel(excel_path)
+shp_path = Path(__file__).parent / "data" / "administrative" / "rinsyousigen" / "01_渡島_小班.shp"
+gdf = gpd.read_file(shp_path)
 
-print("市町村コードの一覧:")
-print(sorted(df['市町村コード'].unique()))
+print("=== KEYCODEの構造確認 ===\n")
 
-print("\nKEYCODEと市町村コードの対応（最初の20件）:")
-for i in range(min(20, len(df))):
-    keycode = str(int(df['KEYCODE'].iloc[i])).zfill(14)
-    mun_code = str(int(df['市町村コード'].iloc[i])).zfill(2)
-    rinban = str(int(df['林班'].iloc[i])).zfill(4)
-    syouhan = str(int(df['小班'].iloc[i])).zfill(4)
-    
-    print(f"KEYCODE: {keycode}")
-    print(f"  市町村コード: {mun_code}")
-    print(f"  林班: {rinban}")
-    print(f"  小班: {syouhan}")
-    print(f"  KEYCODEの最初の2桁: {keycode[:2]}")
-    print(f"  KEYCODEの3-4桁: {keycode[2:4]}")
+# サンプルを表示
+print("サンプル（最初の5件）:")
+for i in range(5):
+    keycode = gdf.iloc[i]['KEYCODE']
+    muni_code = gdf.iloc[i]['市町村コー']
+    print(f"KEYCODE: {keycode}, 市町村コー: {muni_code}")
+    print(f"  1-2桁目（振興局）: {keycode[0:2]}")
+    print(f"  3-4桁目（市町村）: {keycode[2:4]}")
+    print(f"  5-8桁目（林班）: {keycode[4:8]}")
+    print(f"  9-12桁目（小班）: {keycode[8:12]}")
+    print(f"  13-14桁目（枝番）: {keycode[12:14]}")
     print()
+
+# 各市町村のKEYCODEを確認
+print("\n=== 市町村別KEYCODE ===\n")
+for muni_code in sorted(gdf['市町村コー'].unique()):
+    if muni_code:
+        sample = gdf[gdf['市町村コー'] == muni_code].iloc[0]
+        keycode = sample['KEYCODE']
+        print(f"市町村コー {muni_code}: KEYCODE={keycode} (振興局={keycode[0:2]}, 市町村={keycode[2:4]})")

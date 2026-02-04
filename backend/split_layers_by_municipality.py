@@ -16,10 +16,11 @@ def split_layers_by_municipality():
     
     print(f"Total entries: {len(data)}")
     
-    # Group by municipality code (first 5 digits of KEYCODE)
+    # Group by municipality code (digits 1-4 of KEYCODE: 振興局2桁+市町村2桁)
     by_municipality = {}
     for keycode, layers in data.items():
-        muni_code = keycode[:5] if len(keycode) >= 5 else 'unknown'
+        # KEYCODEの1-4桁目を取得（振興局2桁+市町村2桁）
+        muni_code = keycode[:4] if len(keycode) >= 4 else 'unknown'
         if muni_code not in by_municipality:
             by_municipality[muni_code] = {}
         by_municipality[muni_code][keycode] = layers
