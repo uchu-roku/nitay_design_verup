@@ -4,7 +4,7 @@ name: Deploy frontend to GitHub Pages
 on:
   push:
     branches:
-      - clean-main   # clean-main ブランチに push されたら実行
+      - main   # main ブランチに push されたら実行
 
 permissions:
   contents: read
