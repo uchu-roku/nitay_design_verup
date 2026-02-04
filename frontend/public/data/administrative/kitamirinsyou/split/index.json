@@ -1,4 +1,28 @@
 {
+  "total_features": 103694,
+  "num_parts": 4,
+  "parts": [
+    {
+      "part": 1,
+      "file": "forest_part_1.geojson",
+      "features": 33000
+    },
+    {
+      "part": 2,
+      "file": "forest_part_2.geojson",
+      "features": 33000
+    },
+    {
+      "part": 3,
+      "file": "forest_part_3.geojson",
+      "features": 33000
+    },
+    {
+      "part": 4,
+      "file": "forest_part_4.geojson",
+      "features": 4694
+    }
+  ],
   "municipalities": [
     "0101",
     "0102",
@@ -12,5 +36,5 @@
     "0117",
     "0119"
   ],
-  "file_pattern": "layers_{municipality_code}.json"
+  "layers_file_pattern": "layers_{municipality_code}.json"
 }
