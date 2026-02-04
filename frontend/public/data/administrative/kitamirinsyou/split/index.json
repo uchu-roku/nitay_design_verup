@@ -1,0 +1,30 @@
+{
+  "total_features": 103694,
+  "num_parts": 4,
+  "parts": [
+    {
+      "part": 1,
+      "file": "forest_part_1.geojson",
+      "features": 33000,
+      "size_mb": 38.55
+    },
+    {
+      "part": 2,
+      "file": "forest_part_2.geojson",
+      "features": 33000,
+      "size_mb": 35.97
+    },
+    {
+      "part": 3,
+      "file": "forest_part_3.geojson",
+      "features": 33000,
+      "size_mb": 40.58
+    },
+    {
+      "part": 4,
+      "file": "forest_part_4.geojson",
+      "features": 4694,
+      "size_mb": 4.56
+    }
+  ]
+}
