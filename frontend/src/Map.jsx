@@ -697,7 +697,7 @@ function Map({
       delete window.analyzeSelectedForests
       delete window.getMunicipalityCodes
     }
-  }, [highlightedLayerRef])
+  }, [highlightedLayerRef, municipalityNames])
 
   // 描画モードの状態を更新
   useEffect(() => {
