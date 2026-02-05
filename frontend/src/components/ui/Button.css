@@ -27,6 +27,7 @@
 /* Sizes */
 .btn--sm {
   height: var(--button-height-sm);
+  min-height: 32px;
   padding: 0 var(--spacing-3);
   font-size: var(--font-size-sm);
   border-radius: var(--radius-sm);

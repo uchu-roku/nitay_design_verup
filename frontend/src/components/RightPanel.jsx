@@ -25,19 +25,19 @@ const RightPanel = ({
 
       <div className="right-panel-content">
         {analysisStatus === 'analyzing' && (
-          <div className="analysis-loading">
+          <div className="analysis-loading" aria-live="polite">
             <Skeleton width="100%" height="20px" />
             <Skeleton width="100%" height="20px" />
             <Skeleton width="80%" height="20px" />
-            <p className="loading-text">解析中...</p>
+            <p className="loading-text">解析中...しばらくお待ちください</p>
           </div>
         )}
 
         {analysisStatus === 'error' && (
-          <div className="analysis-error">
+          <div className="analysis-error" role="alert">
             <AppIcon name="error" size="lg" />
             <h4>解析エラー</h4>
-            <p>解析処理中にエラーが発生しました。</p>
+            <p>解析処理中にエラーが発生しました。再度お試しください。</p>
           </div>
         )}
 
@@ -83,7 +83,10 @@ const RightPanel = ({
         {analysisStatus === 'idle' && (
           <div className="panel-empty">
             <AppIcon name="chart" size="lg" />
-            <p>属性テーブルから小班を選択して<br/>解析ボタンをクリックしてください</p>
+            <p>
+              <strong>1.</strong> 属性テーブルで小班を選択<br/>
+              <strong>2.</strong> 「選択した小班を解析」をクリック
+            </p>
           </div>
         )}
       </div>

@@ -98,52 +98,34 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
         <div className="table-actions">
           <Badge variant="neutral">{data.length}件</Badge>
           {selectedRows.size > 0 && (
-            <Badge variant="primary">合計面積: {totalArea}ha</Badge>
+            <span aria-live="polite">
+              <Badge variant="primary">選択: {selectedRows.size}件 / 合計面積: {totalArea}ha</Badge>
+            </span>
           )}
           {data.length > 0 && (
-            <button
-              style={{
-                padding: '8px 16px',
-                background: '#2c5f2d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                position: 'relative',
-                zIndex: 9999
-              }}
+            <Button
+              variant="primary"
+              size="sm"
+              icon="check"
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                console.log('[AttributeTable] ========== ボタンクリック ==========')
-                console.log('[AttributeTable] selectedRows:', selectedRows)
-                console.log('[AttributeTable] selectedRows.size:', selectedRows.size)
-                console.log('[AttributeTable] data:', data)
-                console.log('[AttributeTable] onAnalyzeSelected:', onAnalyzeSelected)
                 
                 // チェックされた行のデータを取得
                 const selectedData = Array.from(selectedRows).map(index => data[index]).filter(Boolean)
-                console.log('[AttributeTable] チェックされた行:', selectedData)
-                console.log('[AttributeTable] チェックされた行の数:', selectedData.length)
                 
                 if (selectedData.length === 0) {
-                  console.log('[AttributeTable] 選択なし - アラート表示')
                   alert('小班を選択してください。')
                   return
                 }
                 
                 if (onAnalyzeSelected) {
-                  console.log('[AttributeTable] onAnalyzeSelected を呼び出します')
                   onAnalyzeSelected(selectedData)
-                } else {
-                  console.error('[AttributeTable] onAnalyzeSelected が定義されていません')
                 }
               }}
             >
-              ✓ 選択した小班を解析 ({selectedRows.size}件)
-            </button>
+              選択した小班を解析 ({selectedRows.size}件)
+            </Button>
           )}
           <Button variant="ghost" size="sm" icon="filter">フィルタ</Button>
           <Button variant="ghost" size="sm" icon="refresh">並替</Button>
@@ -234,16 +216,18 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
           </thead>
           <tbody>
             {sortedData.map((row, index) => {
-              // デバッグ: 複層区分の値を確認
-              if (index === 0) {
-                console.log('[AttributeTable] 最初の行の複層区分:', row.fukusouKubun)
-              }
-              
               return (
               <tr 
                 key={row.keycode || index} 
                 className={selectedRows.has(index) ? 'selected' : ''}
+                tabIndex={0}
                 onClick={() => handleRowSelect(index)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleRowSelect(index)
+                  }
+                }}
               >
                 <td className="col-checkbox">
                   {/* 複層区分が2以上（下層）の場合はチェックボックスを無効化 */}
