@@ -32,13 +32,14 @@
 .header-center {
   flex: 1;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-left: 152px; /* サイドバー幅(200px) - header-left幅 - gap分を調整 */
 }
 
 .global-search {
   display: flex;
   gap: var(--spacing-2);
-  flex: 1;
+  flex: 0 1 auto;
 }
 
 .global-search input {
