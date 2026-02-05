@@ -18,6 +18,8 @@ async function fetchLayersData(keycode) {
   const baseUrl = import.meta.env.BASE_URL || '/'
   const layersUrl = `${baseUrl}data/administrative/kitamirinsyou/split/layers_${munCode}.json`
   
+  console.log(`[fetchLayersData] KEYCODE: ${keycode}, munCode: ${munCode}, URL: ${layersUrl}`)
+  
   try {
     const res = await fetch(layersUrl)
     if (!res.ok) {
@@ -29,9 +31,12 @@ async function fetchLayersData(keycode) {
     
     // KEYCODEに対応する層データを取得
     if (allLayers[keycode]) {
-      return allLayers[keycode]
+      console.log(`[fetchLayersData] 層データ取得成功: ${keycode}, ${allLayers[keycode].length}件`)
+      // 配列を { layers: [...] } の形式で返す
+      return { layers: allLayers[keycode] }
     }
     
+    console.warn(`[fetchLayersData] KEYCODEが見つかりません: ${keycode}`)
     return { layers: [] }
   } catch (err) {
     console.error('層データ取得エラー:', err)
