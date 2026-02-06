@@ -1,5 +1,7 @@
 import React from 'react'
 import AppIcon from './AppIcon'
+import LegendPanel from './LegendPanel'
+import { getTreeMeshLegends } from '../legendRegistry'
 
 const Sidebar = ({ 
   activeTab, 
@@ -25,6 +27,7 @@ const Sidebar = ({
   onPresetImageSelect,
   drawMode = false,
   drawType = null,
+  treePoints = [], // 樹木メッシュデータ
   onDrawModeChange
 }) => {
   const tabs = [
@@ -33,6 +36,14 @@ const Sidebar = ({
     { id: 'chatbot', label: 'チャット', icon: 'message' },
     { id: 'tools', label: 'ツール', icon: 'settings' },
   ]
+
+  // 凡例アイテムを動的に生成
+  const legendItems = []
+  
+  // 樹木メッシュデータがある場合は凡例を追加
+  if (treePoints && treePoints.length > 0) {
+    legendItems.push(...getTreeMeshLegends())
+  }
 
   return (
     <aside className="sidebar">
@@ -194,19 +205,8 @@ const Sidebar = ({
               </div>
             </div>
             
-            <div className="legend">
-              <h4 className="legend-title">凡例</h4>
-              <div className="legend-items">
-                <div className="legend-item">
-                  <span className="legend-color" style={{background: '#16a34a'}}></span>
-                  <span className="legend-text">針葉樹</span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color" style={{background: '#d97706'}}></span>
-                  <span className="legend-text">広葉樹</span>
-                </div>
-              </div>
-            </div>
+            {/* 新しい凡例パネル */}
+            <LegendPanel items={legendItems} />
           </div>
         )}
         
