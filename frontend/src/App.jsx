@@ -1106,6 +1106,7 @@ function App() {
           drawMode={drawMode}
           drawType={drawType}
           onDrawModeChange={handleDrawModeChange}
+          treePoints={treePoints}
         />
         
         <main className="main-content">

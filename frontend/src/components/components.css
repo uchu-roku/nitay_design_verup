@@ -371,46 +371,6 @@
   box-shadow: var(--focus-ring);
 }
 
-/* Legend */
-.legend {
-  margin-top: var(--spacing-4);
-  padding: var(--spacing-3);
-  background: var(--bg-surface);
-  border-radius: var(--radius-base);
-  border: var(--border-width) solid var(--border-default);
-  box-shadow: var(--shadow-md);
-}
-
-.legend-title {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-secondary);
-  margin: 0 0 var(--spacing-2) 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.legend-items {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-size: var(--font-size-sm);
-  color: var(--text-primary);
-}
-
-.legend-color {
-  width: 14px;
-  height: 14px;
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-}
-
 .file-input,
 .tool-button {
   width: 100%;
