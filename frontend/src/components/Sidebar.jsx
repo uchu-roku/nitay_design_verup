@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import AppIcon from './AppIcon'
 import LegendPanel from './LegendPanel'
-import { getTreeMeshLegends } from '../legendRegistry'
+import Tooltip from './ui/Tooltip'
+import { getTreeMeshLegends, contourLegend, slopeLegend } from '../legendRegistry'
 
 const Sidebar = ({ 
   activeTab, 
@@ -30,6 +31,9 @@ const Sidebar = ({
   treePoints = [], // 樹木メッシュデータ
   onDrawModeChange
 }) => {
+  const [slopeLegendExpanded, setSlopeLegendExpanded] = useState(false)
+  const [contourLegendExpanded, setContourLegendExpanded] = useState(false)
+  
   const tabs = [
     { id: 'layers', label: 'レイヤ', icon: 'layer' },
     { id: 'upload', label: 'アップロード', icon: 'upload' },
@@ -145,7 +149,12 @@ const Sidebar = ({
                   >
                     <AppIcon name={showSlope ? 'eye' : 'eyeOff'} size="sm" />
                   </button>
-                  <span className="layer-name">傾斜図</span>
+                  <span className="layer-name">
+                    傾斜図
+                    <Tooltip content={slopeLegend.miniDescription} position="right">
+                      <AppIcon name="info" size="sm" style={{ marginLeft: '4px', color: 'var(--text-secondary)', cursor: 'help' }} />
+                    </Tooltip>
+                  </span>
                 </div>
                 <div className="layer-actions">
                   <button className="layer-menu-btn" title="設定">
@@ -153,20 +162,52 @@ const Sidebar = ({
                   </button>
                 </div>
                 {showSlope && (
-                  <div className="layer-opacity-control">
-                    <label className="opacity-label">
-                      <span className="opacity-text">透明度</span>
-                      <span className="opacity-value">{Math.round((1 - slopeOpacity) * 100)}%</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={(1 - slopeOpacity) * 100}
-                      onChange={(e) => onSlopeOpacityChange(1 - e.target.value / 100)}
-                      className="opacity-slider"
-                    />
-                  </div>
+                  <>
+                    <div className="layer-opacity-control">
+                      <label className="opacity-label">
+                        <span className="opacity-text">透明度</span>
+                        <span className="opacity-value">{Math.round((1 - slopeOpacity) * 100)}%</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={(1 - slopeOpacity) * 100}
+                        onChange={(e) => onSlopeOpacityChange(1 - e.target.value / 100)}
+                        className="opacity-slider"
+                      />
+                    </div>
+                    
+                    {/* 折りたたみ可能な凡例 */}
+                    <div className="layer-legend-section">
+                      <button 
+                        className="legend-toggle-btn"
+                        onClick={() => setSlopeLegendExpanded(!slopeLegendExpanded)}
+                      >
+                        <AppIcon name={slopeLegendExpanded ? 'chevronDown' : 'chevronRight'} size="sm" />
+                        <span>凡例</span>
+                      </button>
+                      
+                      {slopeLegendExpanded && (
+                        <div className="legend-detail">
+                          <div className="legend-item-container">
+                            <div className="legend-item-description">{slopeLegend.description}</div>
+                            <div className="legend-categorical">
+                              {slopeLegend.categories.map((cat, idx) => (
+                                <div key={idx} className="legend-categorical-item">
+                                  <span 
+                                    className="legend-categorical-color" 
+                                    style={{ backgroundColor: cat.color }}
+                                  />
+                                  <span className="legend-categorical-label">{cat.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
               
@@ -179,7 +220,12 @@ const Sidebar = ({
                   >
                     <AppIcon name={showContour ? 'eye' : 'eyeOff'} size="sm" />
                   </button>
-                  <span className="layer-name">等高線</span>
+                  <span className="layer-name">
+                    等高線
+                    <Tooltip content={contourLegend.miniDescription} position="right">
+                      <AppIcon name="info" size="sm" style={{ marginLeft: '4px', color: 'var(--text-secondary)', cursor: 'help' }} />
+                    </Tooltip>
+                  </span>
                 </div>
                 <div className="layer-actions">
                   <button className="layer-menu-btn" title="設定">
@@ -187,20 +233,56 @@ const Sidebar = ({
                   </button>
                 </div>
                 {showContour && (
-                  <div className="layer-opacity-control">
-                    <label className="opacity-label">
-                      <span className="opacity-text">透明度</span>
-                      <span className="opacity-value">{Math.round((1 - contourOpacity) * 100)}%</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={(1 - contourOpacity) * 100}
-                      onChange={(e) => onContourOpacityChange(1 - e.target.value / 100)}
-                      className="opacity-slider"
-                    />
-                  </div>
+                  <>
+                    <div className="layer-opacity-control">
+                      <label className="opacity-label">
+                        <span className="opacity-text">透明度</span>
+                        <span className="opacity-value">{Math.round((1 - contourOpacity) * 100)}%</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={(1 - contourOpacity) * 100}
+                        onChange={(e) => onContourOpacityChange(1 - e.target.value / 100)}
+                        className="opacity-slider"
+                      />
+                    </div>
+                    
+                    {/* 折りたたみ可能な凡例 */}
+                    <div className="layer-legend-section">
+                      <button 
+                        className="legend-toggle-btn"
+                        onClick={() => setContourLegendExpanded(!contourLegendExpanded)}
+                      >
+                        <AppIcon name={contourLegendExpanded ? 'chevronDown' : 'chevronRight'} size="sm" />
+                        <span>凡例</span>
+                      </button>
+                      
+                      {contourLegendExpanded && (
+                        <div className="legend-detail">
+                          <div className="legend-item-container">
+                            <div className="legend-item-description">{contourLegend.description}</div>
+                            <div className="legend-categorical">
+                              {contourLegend.categories.map((cat, idx) => (
+                                <div key={idx} className="legend-categorical-item">
+                                  <span 
+                                    className="legend-categorical-color" 
+                                    style={{ 
+                                      backgroundColor: cat.color,
+                                      borderStyle: cat.lineType === 'dashed' ? 'dashed' : 'solid',
+                                      borderWidth: cat.lineWidth ? `${cat.lineWidth}px` : '1px'
+                                    }}
+                                  />
+                                  <span className="legend-categorical-label">{cat.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </div>

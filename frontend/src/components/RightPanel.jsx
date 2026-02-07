@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import AppIcon from './AppIcon'
 import Skeleton from './ui/Skeleton'
+import Tooltip from './ui/Tooltip'
+import { coniferRamp, broadleafRamp } from '../legendRegistry'
 
 const RightPanel = ({ 
   isOpen, 
@@ -9,6 +11,8 @@ const RightPanel = ({
   analysisStatus,
   tableHeight = 300
 }) => {
+  const [legendExpanded, setLegendExpanded] = useState(false)
+  
   if (!isOpen) return null
 
   return (
@@ -50,11 +54,21 @@ const RightPanel = ({
                   <span className="metric-value">{analysisResult.tree_count || 0}本</span>
                 </div>
                 <div className="metric-item">
-                  <span className="metric-label">針葉樹</span>
+                  <span className="metric-label">
+                    針葉樹
+                    <Tooltip content={coniferRamp.miniDescription} position="right">
+                      <AppIcon name="info" size="sm" style={{ marginLeft: '4px', color: 'var(--text-secondary)', cursor: 'help' }} />
+                    </Tooltip>
+                  </span>
                   <span className="metric-value">{analysisResult.coniferous_count || 0}本</span>
                 </div>
                 <div className="metric-item">
-                  <span className="metric-label">広葉樹</span>
+                  <span className="metric-label">
+                    広葉樹
+                    <Tooltip content={broadleafRamp.miniDescription} position="right">
+                      <AppIcon name="info" size="sm" style={{ marginLeft: '4px', color: 'var(--text-secondary)', cursor: 'help' }} />
+                    </Tooltip>
+                  </span>
                   <span className="metric-value">{analysisResult.broadleaf_count || 0}本</span>
                 </div>
                 <div className="metric-item">
@@ -62,6 +76,77 @@ const RightPanel = ({
                   <span className="metric-value">{analysisResult.volume_m3 || 0}m³</span>
                 </div>
               </div>
+            </div>
+
+            {/* 折りたたみ可能な凡例セクション */}
+            <div className="result-section legend-section">
+              <button 
+                className="legend-toggle-btn"
+                onClick={() => setLegendExpanded(!legendExpanded)}
+              >
+                <AppIcon name={legendExpanded ? 'chevronDown' : 'chevronRight'} size="sm" />
+                <span>凡例の詳細を見る</span>
+              </button>
+              
+              {legendExpanded && (
+                <div className="legend-detail">
+                  {/* 針葉樹凡例 */}
+                  <div className="legend-item-container">
+                    <div className="legend-item-title">{coniferRamp.title}</div>
+                    <div className="legend-item-description">{coniferRamp.description}</div>
+                    <div className="legend-ramp">
+                      <div className="legend-ramp-bar">
+                        {coniferRamp.stops.map((stop, idx) => (
+                          <div
+                            key={idx}
+                            className="legend-ramp-stop"
+                            style={{ 
+                              backgroundColor: stop.color,
+                              flex: 1
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <div className="legend-ramp-labels">
+                        <span className="legend-ramp-label-start">
+                          {coniferRamp.stops[0]?.label || ''}
+                        </span>
+                        <span className="legend-ramp-label-end">
+                          {coniferRamp.stops[coniferRamp.stops.length - 1]?.label || ''}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 広葉樹凡例 */}
+                  <div className="legend-item-container">
+                    <div className="legend-item-title">{broadleafRamp.title}</div>
+                    <div className="legend-item-description">{broadleafRamp.description}</div>
+                    <div className="legend-ramp">
+                      <div className="legend-ramp-bar">
+                        {broadleafRamp.stops.map((stop, idx) => (
+                          <div
+                            key={idx}
+                            className="legend-ramp-stop"
+                            style={{ 
+                              backgroundColor: stop.color,
+                              flex: 1
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <div className="legend-ramp-labels">
+                        <span className="legend-ramp-label-start">
+                          {broadleafRamp.stops[0]?.label || ''}
+                        </span>
+                        <span className="legend-ramp-label-end">
+                          {broadleafRamp.stops[broadleafRamp.stops.length - 1]?.label || ''}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {analysisResult.warnings && analysisResult.warnings.length > 0 && (
