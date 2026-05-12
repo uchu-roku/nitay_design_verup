@@ -72,6 +72,36 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
 
   const totalArea = calculateTotalArea()
 
+  const handleExportCSV = () => {
+    const headers = ['林班', '小班', '市町村', '面積(ha)', '森林種類', '林種', '樹種', '林齢(年)', '複層区分', '推定材積(m³)', '推定本数(本)']
+    const rows = data.map(row => [
+      row.rinban || '',
+      row.shoban || '',
+      row.municipalityName || '',
+      row.area || '',
+      row.forestType || '',
+      row.rinshu || '',
+      row.species || '',
+      row.age || '',
+      row.fukusouKubun || '',
+      row.estimatedVolume != null ? row.estimatedVolume : '',
+      row.estimatedTrees != null ? row.estimatedTrees : '',
+    ])
+
+    const bom = '﻿'
+    const csvContent = bom + [headers, ...rows]
+      .map(cols => cols.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\r\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `属性テーブル_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   if (!data || data.length === 0) {
     return (
       <div className="attribute-table">
@@ -129,7 +159,7 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
           )}
           <Button variant="ghost" size="sm" icon="filter">フィルタ</Button>
           <Button variant="ghost" size="sm" icon="refresh">並替</Button>
-          <Button variant="ghost" size="sm" icon="export">CSV出力</Button>
+          <Button variant="ghost" size="sm" icon="export" onClick={handleExportCSV}>CSV出力</Button>
         </div>
       </div>
       
@@ -212,6 +242,22 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
                   )}
                 </div>
               </th>
+              <th className="col-sortable col-numeric" onClick={() => handleSort('estimatedVolume')}>
+                <div className="th-content">
+                  推定材積
+                  {sortConfig.key === 'estimatedVolume' && (
+                    <AppIcon name={sortConfig.direction === 'asc' ? 'chevronUp' : 'chevronDown'} size="sm" />
+                  )}
+                </div>
+              </th>
+              <th className="col-sortable col-numeric" onClick={() => handleSort('estimatedTrees')}>
+                <div className="th-content">
+                  推定本数
+                  {sortConfig.key === 'estimatedTrees' && (
+                    <AppIcon name={sortConfig.direction === 'asc' ? 'chevronUp' : 'chevronDown'} size="sm" />
+                  )}
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -255,6 +301,12 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
                 <td>{row.species || '-'}</td>
                 <td className="col-numeric">{row.age ? `${row.age}年` : '-'}</td>
                 <td>{row.fukusouKubun || '-'}</td>
+                <td className="col-numeric col-estimated">
+                  {row.estimatedVolume != null ? `${row.estimatedVolume.toLocaleString()} m³` : '—'}
+                </td>
+                <td className="col-numeric col-estimated">
+                  {row.estimatedTrees != null ? `${row.estimatedTrees.toLocaleString()} 本` : '—'}
+                </td>
               </tr>
             )})}
           </tbody>

@@ -329,6 +329,11 @@ button.secondary:hover:not(:disabled) {
   display: none;
 }
 
+/* リセット・元に戻すボタンを上端に寄せる */
+.leaflet-top.leaflet-left {
+  padding-top: 4px;
+}
+
 .no-tip-popup .leaflet-popup-content-wrapper {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);

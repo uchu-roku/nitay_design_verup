@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import L from 'leaflet'
 import Map from './Map'
 import Header from './components/Header'
@@ -10,8 +10,152 @@ import './components/components.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+// 補正係数（基準小班 林班55-76 の衛星分析値 / 森林簿値）
+const VOLUME_CORRECTION = 245.5 / 283.0
+
+// 樹種コードを2桁ゼロ埋め文字列に正規化
+function normalizeSpeciesCode(raw) {
+  if (!raw) return null
+  const n = parseInt(String(raw).trim(), 10)
+  if (isNaN(n)) return null
+  return String(n).padStart(2, '0')
+}
+
+// 推定材積密度(m³/ha)と推定材積(m³)を計算
+function calcVolume(layer) {
+  const n = parseFloat(layer['HA当蓄積N']) || 0
+  const l = parseFloat(layer['HA当蓄積L']) || 0
+  const area = parseFloat(layer['面積']) || 0
+  if (n === 0 && l === 0) return { density: null, total: null }
+  const density = (n + l) * VOLUME_CORRECTION
+  const total = density * area
+  return {
+    density: Math.round(density * 10) / 10,
+    total: Math.round(total * 10) / 10
+  }
+}
+
+// 推定本数密度(本/ha)と推定本数(本)を計算
+function calcTrees(layer, coefficients) {
+  if (!coefficients) return { density: null, total: null }
+  const code = normalizeSpeciesCode(layer['樹種1コード'])
+  if (!code) return { density: null, total: null }
+  const coeff = coefficients.species_coefficients[code]
+  if (!coeff) return { density: null, total: null }
+
+  const vol = calcVolume(layer)
+  if (!vol.density || vol.density <= 0) return { density: null, total: null }
+
+  const h = parseFloat(layer['樹高']) || 0
+  if (h <= 0) return { density: null, total: null }
+
+  const { b1, b2, b3, b4 } = coeff
+  const denom = 1 / vol.density - b1 * Math.pow(h, b2)
+  if (denom <= 0) return { density: null, total: null }
+
+  const nDensity = b3 * Math.pow(h, b4) / denom
+  if (!isFinite(nDensity) || nDensity <= 0) return { density: null, total: null }
+
+  const area = parseFloat(layer['面積']) || 0
+  return {
+    density: Math.round(nDensity),
+    total: Math.round(nDensity * area)
+  }
+}
+
+function LoginScreen({ onLogin }) {
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState(false)
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (password === 'hakodate') {
+      sessionStorage.setItem('nitay_auth', '1')
+      onLogin()
+    } else {
+      setError(true)
+      setPassword('')
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      backgroundImage: 'url(/images/login-bg.png)',
+      backgroundSize: 'cover', backgroundPosition: 'center',
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: '12px', padding: '48px 40px',
+        width: '400px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)'
+      }}>
+        <h1 style={{ textAlign: 'center', fontSize: '28px', fontWeight: '700', color: '#1a2a1a', marginBottom: '12px' }}>
+          Nitay
+        </h1>
+        <p style={{ textAlign: 'center', color: '#555', fontSize: '14px', marginBottom: '28px' }}>
+          システムを利用するにはパスワードを入力してください
+        </p>
+        <form onSubmit={handleSubmit}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#333', marginBottom: '8px' }}>
+            パスワード
+          </label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(false) }}
+              placeholder="パスワード"
+              autoFocus
+              style={{
+                width: '100%', padding: '12px 44px 12px 14px', fontSize: '15px',
+                border: error ? '1.5px solid #e53e3e' : '1.5px solid #ddd',
+                borderRadius: '8px', outline: 'none', boxSizing: 'border-box',
+                color: '#222'
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              style={{
+                position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '4px'
+              }}
+            >
+              {showPassword ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              )}
+            </button>
+          </div>
+          {error && (
+            <p style={{ color: '#e53e3e', fontSize: '13px', marginTop: '6px' }}>
+              パスワードが正しくありません
+            </p>
+          )}
+          <button
+            type="submit"
+            style={{
+              width: '100%', marginTop: '24px', padding: '14px',
+              background: '#2d7d32', color: '#fff', border: 'none',
+              borderRadius: '8px', fontSize: '16px', fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            ログイン
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   // State管理
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => sessionStorage.getItem('nitay_auth') === '1'
+  )
   const [theme, setTheme] = useState(() => {
     // ローカルストレージからテーマを読み込む
     return localStorage.getItem('theme') || 'light'
@@ -58,6 +202,7 @@ function App() {
   const [tableHeight, setTableHeight] = useState(150)  // 初期高さを300→150に変更
   const [isResizing, setIsResizing] = useState(false)
   const [municipalityNames, setMunicipalityNames] = useState({})
+  const [speciesCoefficients, setSpeciesCoefficients] = useState(null)
   
   const tableRef = useRef(null)
   const startYRef = useRef(0)
@@ -102,6 +247,15 @@ function App() {
           '19': '上ノ国町'
         })
       })
+  }, [])
+
+  // 林分密度管理図係数テーブルを取得
+  useEffect(() => {
+    const baseUrl = import.meta.env.BASE_URL || '/'
+    fetch(`${baseUrl}data/species_coefficients.json`)
+      .then(res => res.json())
+      .then(data => setSpeciesCoefficients(data))
+      .catch(err => console.error('係数テーブル取得エラー:', err))
   }, [])
 
   // プリセット画像リストを取得
@@ -376,31 +530,35 @@ function App() {
               layerArea = areaValue.toFixed(2)
             }
           }
-          
+
           // 森林種類を取得
-          const layerForestType = layer['森林の種類1名'] || 
+          const layerForestType = layer['森林の種類1名'] ||
                                   layer['森林の種類1コード'] ||
                                   '—'
-          
+
           // 林種を取得
           const layerRinshu = layer['林種名'] ||
                              layer['林種コード'] ||
                              '—'
-          
+
           // 樹種を取得
           const layerSpecies = layer['樹種1名'] ||
                               layer['樹種1コード'] ||
                               '—'
-          
+
           // 林齢を取得
           const layerAge = layer['林齢'] || '—'
-          
+
           // 複層区分を取得
-          const layerFukusouKubun = layer['複層区分名'] || 
-                                   layer['複層区分コード'] || 
+          const layerFukusouKubun = layer['複層区分名'] ||
+                                   layer['複層区分コード'] ||
                                    layer['複層区分'] ||
                                    '—'
-          
+
+          // 推定材積・推定本数を計算
+          const volCalc = calcVolume(layer)
+          const treeCalc = calcTrees(layer, speciesCoefficients)
+
           newRows.push({
             id: `${feature.keycode}_layer${layerIndex + 1}`,
             keycode: feature.keycode,
@@ -413,14 +571,18 @@ function App() {
             species: layerSpecies,
             age: layerAge,
             layerCount: feature.layers.length,
-            layerIndex: layerIndex + 1, // 第何層か
+            layerIndex: layerIndex + 1,
             fukusouKubun: String(layerFukusouKubun),
             layers: feature.layers || [],
-            isMultiLayer: true
+            isMultiLayer: true,
+            estimatedVolume: volCalc.total,
+            estimatedTrees: treeCalc.total
           })
         })
       } else {
         // 単層の場合：1行のみ
+        const volCalc = calcVolume(firstLayer || {})
+        const treeCalc = calcTrees(firstLayer || {}, speciesCoefficients)
         newRows.push({
           id: feature.keycode,
           keycode: feature.keycode,
@@ -436,7 +598,9 @@ function App() {
           layerIndex: null,
           fukusouKubun: fukusouKubun,
           layers: feature.layers || [],
-          isMultiLayer: false
+          isMultiLayer: false,
+          estimatedVolume: volCalc.total,
+          estimatedTrees: treeCalc.total
         })
       }
       
@@ -772,6 +936,19 @@ function App() {
     setTableData([])
   }, [])
 
+  // マップリセット時に属性テーブルもクリア
+  const handleClearResults = useCallback(() => {
+    setTableData([])
+    setSelectedFeature(null)
+    setRightPanelOpen(false)
+    setAnalysisResult(null)
+  }, [])
+
+  // 元に戻す時に該当keycodeの行を属性テーブルから削除
+  const handleUndoSelection = useCallback((keycode) => {
+    setTableData(prev => prev.filter(row => row.keycode !== keycode))
+  }, [])
+
   // プリセット画像選択
   const handlePresetImageSelect = async (imageId) => {
     console.log('[App.jsx] プリセット画像選択:', imageId)
@@ -1067,9 +1244,13 @@ function App() {
     setIsChatProcessing(false)
   }
 
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />
+  }
+
   return (
     <div className="app">
-      <Header 
+      <Header
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSearchSubmit={handleSearch}
@@ -1126,6 +1307,8 @@ function App() {
               onFeatureClick={handleFeatureClick}
               onForestSelect={handleFeatureClick}
               onAnalyze={handleMapAnalyze}
+              onClearResults={handleClearResults}
+              onUndoSelection={handleUndoSelection}
               onHasShapeChange={(hasShape) => console.log('[App.jsx] 図形描画状態:', hasShape)}
               treePoints={treePoints}
               polygonCoords={analysisResult?.polygon_coords}

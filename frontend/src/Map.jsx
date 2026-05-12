@@ -72,7 +72,8 @@ function Map({
   onHasShapeChange,
   municipalityNames, // 市町村名マッピングを受け取る
   sidebarVisible, // サイドバーの表示状態
-  onForestSelect // 小班選択時のコールバック
+  onForestSelect, // 小班選択時のコールバック
+  onUndoSelection // 元に戻す時のコールバック（削除されたkeycodeを渡す）
 }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
@@ -97,13 +98,15 @@ function Map({
   const onAnalyzeRef = useRef(onAnalyze)
   const disabledRef = useRef(disabled)
   const onClearResultsRef = useRef(onClearResults)
-  
+  const onUndoSelectionRef = useRef(onUndoSelection)
+
   // 最新の値をrefに保存
   useEffect(() => {
     onAnalyzeRef.current = onAnalyze
     disabledRef.current = disabled
     onClearResultsRef.current = onClearResults
-  }, [onAnalyze, disabled, onClearResults])
+    onUndoSelectionRef.current = onUndoSelection
+  }, [onAnalyze, disabled, onClearResults, onUndoSelection])
 
   // グローバル関数を登録
   useEffect(() => {
@@ -551,7 +554,11 @@ function Map({
 
       const highlightedLayers = window.highlightedLayersMap
 
-      // 前回のハイライトをクリア
+      // 前回の検索結果グループをクリア（親グループを確実に削除）
+      if (window.searchHighlightGroups) {
+        window.searchHighlightGroups.forEach(group => map.removeLayer(group))
+        window.searchHighlightGroups = []
+      }
       if (highlightedLayerRef) {
         map.removeLayer(highlightedLayerRef)
       }
@@ -626,9 +633,13 @@ function Map({
             newLayer._isHighlighted = true
             highlightedLayers.set(keycode, newLayer)
           })
-          
+
+          // 検索結果の親グループを別途追跡（リセット時に確実に削除するため）
+          if (!window.searchHighlightGroups) window.searchHighlightGroups = []
+          window.searchHighlightGroups.push(highlightLayer)
+
           foundBounds.push(bounds)
-          
+
           // 最初に見つかったレイヤーを保存（後方互換性）
           if (!highlightedLayerRef) {
             setHighlightedLayerRef(highlightLayer)
@@ -750,7 +761,7 @@ function Map({
           background: white;
           border-radius: 4px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          transition: margin-top 0.3s ease;
+          margin-top: 8px;
         `
         
         const button = L.DomUtil.create('a', 'leaflet-control-clear', container)
@@ -824,14 +835,14 @@ function Map({
                 console.log('単一レイヤー: 元のレイヤーを復元')
                 map.removeLayer(highlightLayer)
                 highlightLayer._originalLayer.addTo(map)
-              } 
+              }
               // highlightLayerがGeoJSONレイヤーグループの場合
               else if (highlightLayer.eachLayer) {
                 console.log('レイヤーグループ: 各レイヤーを処理')
                 highlightLayer.eachLayer((layer) => {
                   console.log('レイヤーを処理:', layer, '元のレイヤー:', layer._originalLayer)
                   map.removeLayer(layer)
-                  
+
                   if (layer._originalLayer) {
                     layer._originalLayer.addTo(map)
                   }
@@ -839,6 +850,12 @@ function Map({
               }
             })
             window.highlightedLayersMap.clear()
+
+            // 検索結果の親グループもクリア
+            if (window.searchHighlightGroups) {
+              window.searchHighlightGroups.forEach(group => map.removeLayer(group))
+              window.searchHighlightGroups = []
+            }
             console.log('ハイライトをクリアしました')
           } else {
             console.log('クリアするハイライトがありません')
@@ -905,8 +922,7 @@ function Map({
           background: white;
           border-radius: 4px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          margin-top: 10px;
-          transition: margin-top 0.3s ease;
+          margin-top: 4px;
         `
         
         const button = L.DomUtil.create('a', 'leaflet-control-undo', container)
@@ -1022,10 +1038,21 @@ function Map({
                 }
               })
             }
-            
+
             window.highlightedLayersMap.delete(lastKeycode)
             console.log('ハイライトを削除しました。残り:', window.highlightedLayersMap.size)
-            
+
+            // 検索結果グループも同期してクリア（全削除）
+            if (window.highlightedLayersMap.size === 0 && window.searchHighlightGroups) {
+              window.searchHighlightGroups.forEach(group => map.removeLayer(group))
+              window.searchHighlightGroups = []
+            }
+
+            // 属性テーブルから該当keycodeの行を削除
+            if (onUndoSelectionRef.current) {
+              onUndoSelectionRef.current(lastKeycode)
+            }
+
             // 最後のハイライトを削除した場合、パネルも閉じる
             if (window.highlightedLayersMap.size === 0) {
               const popup = document.getElementById('custom-forest-popup')
@@ -2318,15 +2345,8 @@ function Map({
     const undoContainer = document.getElementById('undo-control-container')
     
     if (clearContainer && undoContainer) {
-      if (sidebarVisible) {
-        // サイドバーが表示されている場合は少し下に配置
-        clearContainer.style.marginTop = '60px'
-        undoContainer.style.marginTop = '10px'
-      } else {
-        // サイドバーが非表示の場合は下に移動（サイドバートグルボタンの下）
-        clearContainer.style.marginTop = '60px'
-        undoContainer.style.marginTop = '10px' // リセットボタンからの相対位置は変わらない
-      }
+      clearContainer.style.marginTop = '8px'
+      undoContainer.style.marginTop = '4px'
     }
   }, [sidebarVisible])
 
