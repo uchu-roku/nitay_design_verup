@@ -175,10 +175,11 @@ function Map({
       if (forestRegistryLayerRef.current) {
         forestRegistryLayerRef.current.eachLayer((layer) => {
           layer.setStyle({
-            color: '#8B4513',
-            weight: 2,
-            opacity: 0.7,
-            fillOpacity: 0.15
+            color: '#fbbf24',
+            weight: 1.0,
+            opacity: 0.72,
+            fillOpacity: 0,
+            fillColor: '#fbbf24'
           })
           layer._isHighlighted = false
         })
@@ -188,6 +189,50 @@ function Map({
       console.log('選択をクリアしました')
     }
     
+    // keycodeで元の森林簿レイヤーのスタイルを復元する関数
+    window.restoreForestLayerByKeycode = (keycode) => {
+      if (!forestRegistryLayerRef.current) return
+      forestRegistryLayerRef.current.eachLayer((layer) => {
+        const props = layer.feature?.properties
+        if (!props || props['KEYCODE'] !== keycode) return
+        layer.setStyle({ color: '#fbbf24', weight: 1.0, opacity: 0.72, fillOpacity: 0, fillColor: '#fbbf24' })
+        layer._isHighlighted = false
+      })
+    }
+
+    // keycodeで小班をハイライト選択する関数（属性テーブルのチェックから呼び出す）
+    window.highlightForestByKeycode = (keycode) => {
+      if (!mapInstanceRef.current || !forestRegistryLayerRef.current) return
+      if (window.highlightedLayersMap.has(keycode)) return // 既に選択済み
+
+      const map = mapInstanceRef.current
+      forestRegistryLayerRef.current.eachLayer((layer) => {
+        const props = layer.feature?.properties
+        if (!props || props['KEYCODE'] !== keycode) return
+
+        const geojson = layer.toGeoJSON()
+        const highlightLayer = L.geoJSON(geojson, {
+          pane: 'forestRegistryHighlightPane',
+          style: {
+            color: '#22c55e',
+            weight: 2.8,
+            opacity: 1,
+            fillOpacity: 0.18,
+            fillColor: '#22c55e'
+          }
+        }).addTo(map)
+
+        highlightLayer.eachLayer((newLayer) => {
+          newLayer._isHighlighted = true
+          newLayer._originalLayer = layer
+        })
+
+        window.highlightedLayersMap.set(keycode, highlightLayer)
+        layer.setStyle({ opacity: 0, fillOpacity: 0 })
+        layer._isHighlighted = true
+      })
+    }
+
     // 選択情報を表示する関数
     window.showSelectedForestInfo = async () => {
       if (!mapInstanceRef.current) return
@@ -328,7 +373,7 @@ function Map({
             padding: 10px;
             margin: 6px 0;
             border-radius: 4px;
-            border-left: 4px solid #FF4500;
+            border-left: 4px solid #22c55e;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           ">
             <div style="
@@ -571,10 +616,11 @@ function Map({
       if (forestRegistryLayerRef.current) {
         forestRegistryLayerRef.current.eachLayer((layer) => {
           layer.setStyle({
-            color: '#8B4513',
-            weight: 2,
-            opacity: 0.7,
-            fillOpacity: 0.15
+            color: '#fbbf24',
+            weight: 1.0,
+            opacity: 0.72,
+            fillOpacity: 0,
+            fillColor: '#fbbf24'
           })
           layer._isHighlighted = false
         })
@@ -621,11 +667,11 @@ function Map({
           const highlightLayer = L.geoJSON(geojson, {
             pane: 'forestRegistryHighlightPane',
             style: {
-              color: '#FF4500',
-              weight: 4,
+              color: '#22c55e',
+              weight: 2.8,
               opacity: 1,
-              fillOpacity: 0.3,
-              fillColor: '#FF4500'
+              fillOpacity: 0.18,
+              fillColor: '#22c55e'
             }
           }).addTo(map)
           
@@ -1205,7 +1251,7 @@ function Map({
           // 森林簿レイヤーを再表示（透明度を元に戻す）
           if (window.forestRegistryLayer) {
             window.forestRegistryLayer.eachLayer(layer => {
-              layer.setStyle({ opacity: 0.7, fillOpacity: 0.15 })
+              layer.setStyle({ opacity: 0.72, fillOpacity: 0 })
             })
             console.log('森林簿レイヤーの透明度を元に戻しました')
           }
@@ -1331,7 +1377,7 @@ function Map({
         
         if (window.forestRegistryLayer) {
           window.forestRegistryLayer.eachLayer(layer => {
-            layer.setStyle({ opacity: 0.7, fillOpacity: 0.15 })
+            layer.setStyle({ color: '#fbbf24', weight: 1.0, opacity: 0.72, fillOpacity: 0, fillColor: '#fbbf24' })
           })
           console.log('森林簿レイヤーの透明度を元に戻しました')
         }
@@ -1865,11 +1911,11 @@ function Map({
           // GeoJSONレイヤーを追加
           const adminLayer = L.geoJSON(data, {
             style: {
-              color: '#ff6b6b',
-              weight: 2,
-              opacity: 0.6,
-              fillOpacity: 0.05,
-              fillColor: '#ff6b6b'
+              color: '#f1f5f9',
+              weight: 1.5,
+              opacity: 0.78,
+              fillOpacity: 0,
+              fillColor: '#f1f5f9'
             },
             interactive: false,  // クリックイベントを無効化
             onEachFeature: (feature, layer) => {
@@ -1926,11 +1972,11 @@ function Map({
           // GeoJSONレイヤーを追加
           const riverLayer = L.geoJSON(data, {
             style: {
-              color: '#2196F3',
-              weight: 2,
-              opacity: 0.7,
-              fillOpacity: 0.1,
-              fillColor: '#2196F3'
+              color: '#60a5fa',
+              weight: 1.5,
+              opacity: 0.82,
+              fillOpacity: 0,
+              fillColor: '#60a5fa'
             },
             interactive: false  // クリックイベントを無効化
           })
@@ -2009,13 +2055,16 @@ function Map({
           const forestLayer = L.geoJSON(data, {
             pane: 'forestRegistryPane',
             style: {
-              color: '#8B4513',
-              weight: 2,
-              opacity: 0.7,
-              fillOpacity: 0.15,
-              fillColor: '#DEB887'
+              color: '#fbbf24',
+              weight: 1.0,
+              opacity: 0.72,
+              fillOpacity: 0,
+              fillColor: '#fbbf24'
             },
             onEachFeature: (feature, layer) => {
+              const baseStyle = { color: '#fbbf24', weight: 1.0, opacity: 0.72, fillOpacity: 0, fillColor: '#fbbf24' }
+              layer.on('mouseover', () => layer.setStyle({ fillOpacity: 0.2, weight: 1.8, fillColor: '#fbbf24' }))
+              layer.on('mouseout', () => layer.setStyle(baseStyle))
               const clickHandler = async (e) => {
                 console.log('小班クリック, 範囲指定モード:', window.forestRegistryPartialMode)
                 
@@ -2056,12 +2105,7 @@ function Map({
                   map.removeLayer(highlightedLayer)
                   
                   // 元のレイヤーのスタイルを復元
-                  layer.setStyle({
-                    color: '#8B4513',
-                    weight: 2,
-                    opacity: 0.7,
-                    fillOpacity: 0.15
-                  })
+                  layer.setStyle({ color: '#fbbf24', weight: 1.0, opacity: 0.72, fillOpacity: 0, fillColor: '#fbbf24' })
                   layer._isHighlighted = false
                   
                   highlightedLayers.delete(keycode)
@@ -2091,11 +2135,11 @@ function Map({
                   const highlightLayer = L.geoJSON(geojson, {
                     pane: 'forestRegistryHighlightPane',
                     style: {
-                      color: '#FF4500',
-                      weight: 4,
+                      color: '#22c55e',
+                      weight: 2.8,
                       opacity: 1,
-                      fillOpacity: 0.3,
-                      fillColor: '#FF4500'
+                      fillOpacity: 0.18,
+                      fillColor: '#22c55e'
                     }
                   }).addTo(map)
                   
@@ -2104,7 +2148,7 @@ function Map({
                     newLayer.on('click', clickHandler)
                     newLayer._isHighlighted = true
                     newLayer._originalLayer = layer
-                    
+
                     // ホバーイベントも再登録
                     newLayer.on('mouseover', () => {
                       if (newLayer._isHighlighted) {
@@ -2114,7 +2158,7 @@ function Map({
                         })
                       }
                     })
-                    
+
                     newLayer.on('mouseout', () => {
                       if (newLayer._isHighlighted) {
                         newLayer.setStyle({
@@ -2123,10 +2167,10 @@ function Map({
                         })
                       }
                     })
-                    
-                    // 新しいレイヤーをマップに保存
-                    highlightedLayers.set(keycode, newLayer)
                   })
+
+                  // 親 FeatureGroup を保存（子 PathLayer ではなく親を管理することで確実に削除できる）
+                  highlightedLayers.set(keycode, highlightLayer)
                   
                   // 元のレイヤーを非表示にする
                   layer.setStyle({
@@ -2196,21 +2240,6 @@ function Map({
               
               // クリックイベントを登録
               layer.on('click', clickHandler)
-              
-              // ホバー時のスタイル変更
-              layer.on('mouseover', () => {
-                layer.setStyle({
-                  fillOpacity: 0.4,
-                  weight: 3
-                })
-              })
-              
-              layer.on('mouseout', () => {
-                layer.setStyle({
-                  fillOpacity: 0.15,
-                  weight: 2
-                })
-              })
             }
           })
           

@@ -37,7 +37,7 @@ const ForestSelectionControl = () => {
         boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
         zIndex: 1000,
         minWidth: '220px',
-        border: '2px solid #FF4500'
+        border: '2px solid #22c55e'
       }}
     >
       {/* ヘッダー */}
@@ -55,7 +55,7 @@ const ForestSelectionControl = () => {
         <span>🌲 選択中の小班</span>
         <span
           style={{
-            background: '#FF4500',
+            background: '#22c55e',
             color: 'white',
             padding: '2px 10px',
             borderRadius: '12px',
@@ -103,7 +103,7 @@ const ForestSelectionControl = () => {
           width: '100%',
           padding: '10px',
           marginBottom: '8px',
-          background: 'linear-gradient(135deg, #FF4500 0%, #DC3545 100%)',
+          background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
           color: 'white',
           border: 'none',
           borderRadius: '6px',

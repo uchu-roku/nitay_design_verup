@@ -265,20 +265,25 @@ label[for="file-upload"]:active {
   pointer-events: auto !important;
 }
 
-.leaflet-overlay-pane svg path[fill="#ff6b6b"] {
+.leaflet-overlay-pane svg path[fill="#f1f5f9"] {
   pointer-events: none !important;
 }
 
-.leaflet-overlay-pane svg path[stroke="#ff6b6b"] {
+.leaflet-overlay-pane svg path[stroke="#f1f5f9"] {
   pointer-events: none !important;
 }
 
-.leaflet-overlay-pane svg path[fill="#2196F3"] {
+.leaflet-overlay-pane svg path[fill="#60a5fa"] {
   pointer-events: none !important;
 }
 
-.leaflet-overlay-pane svg path[stroke="#2196F3"] {
+.leaflet-overlay-pane svg path[stroke="#60a5fa"] {
   pointer-events: none !important;
+}
+
+/* 森林簿ペイン: ホバー時のfill残留を完全抑制（ハイライトペインには影響しない） */
+.leaflet-forest-registry-pane path {
+  fill-opacity: 0 !important;
 }
 
 /* Buttons */

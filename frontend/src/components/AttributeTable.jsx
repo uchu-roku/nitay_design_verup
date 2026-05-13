@@ -3,20 +3,26 @@ import AppIcon from './AppIcon'
 import Button from './ui/Button'
 import Badge from './ui/Badge'
 
+// MOC版表示マスキング: 許可された林班小班のキーコード（北斗市 林班54-小班8, 林班55-小班76）
+const ALLOWED_COMPARTMENT_KEYS = new Set([
+  '01050000540008',
+  '01050000550076',
+])
+
+const isAllowedRow = (row) => row.keycode && ALLOWED_COMPARTMENT_KEYS.has(row.keycode)
+
 const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) => {
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
 
-  // データが変更されたら、複層区分が1以下の行のみを自動的に選択
+  // データが変更されたら、許可済み林班小班かつ複層区分1の行のみを自動選択
   useEffect(() => {
     if (data && data.length > 0) {
       const selectableIndices = new Set(
         data
           .map((row, index) => {
-            // 複層区分が2以上（下層）の場合は選択しない
-            if (row.fukusouKubun && parseInt(row.fukusouKubun) >= 2) {
-              return null
-            }
+            if (!isAllowedRow(row)) return null
+            if (row.fukusouKubun && parseInt(row.fukusouKubun) >= 2) return null
             return index
           })
           .filter(index => index !== null)
@@ -27,18 +33,73 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
     }
   }, [data])
 
+  const selectableIndices = data
+    ? data.map((row, i) => {
+        if (!isAllowedRow(row)) return null
+        if (row.fukusouKubun && parseInt(row.fukusouKubun) >= 2) return null
+        return i
+      }).filter(i => i !== null)
+    : []
+  const allSelected = selectableIndices.length > 0 && selectableIndices.every(i => selectedRows.has(i))
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      if (window.highlightedLayersMap && window.mapInstance) {
+        selectableIndices.forEach(i => {
+          const row = data[i]
+          if (row?.keycode) {
+            const hl = window.highlightedLayersMap.get(row.keycode)
+            if (hl) {
+              window.mapInstance.removeLayer(hl)
+              window.highlightedLayersMap.delete(row.keycode)
+            }
+            if (window.restoreForestLayerByKeycode) {
+              window.restoreForestLayerByKeycode(row.keycode)
+            }
+          }
+        })
+      }
+      setSelectedRows(new Set())
+    } else {
+      if (window.highlightForestByKeycode) {
+        selectableIndices.forEach(i => {
+          const row = data[i]
+          if (row?.keycode) window.highlightForestByKeycode(row.keycode)
+        })
+      }
+      setSelectedRows(new Set(selectableIndices))
+    }
+  }
+
   const handleRowSelect = (id) => {
     const row = data[id]
+    // 対象外林班小班は選択不可
+    if (!row || !isAllowedRow(row)) return
     // 複層区分が2以上（下層）の場合は選択不可
-    if (row && row.fukusouKubun && parseInt(row.fukusouKubun) >= 2) {
+    if (row.fukusouKubun && parseInt(row.fukusouKubun) >= 2) {
       return
     }
-    
+
     const newSelected = new Set(selectedRows)
     if (newSelected.has(id)) {
       newSelected.delete(id)
+      // マップのハイライトを解除し、元レイヤーを復元
+      if (row?.keycode && window.highlightedLayersMap && window.mapInstance) {
+        const highlightLayer = window.highlightedLayersMap.get(row.keycode)
+        if (highlightLayer) {
+          window.mapInstance.removeLayer(highlightLayer)
+          window.highlightedLayersMap.delete(row.keycode)
+        }
+        if (window.restoreForestLayerByKeycode) {
+          window.restoreForestLayerByKeycode(row.keycode)
+        }
+      }
     } else {
       newSelected.add(id)
+      // マップにハイライトを追加
+      if (row?.keycode && window.highlightForestByKeycode) {
+        window.highlightForestByKeycode(row.keycode)
+      }
     }
     setSelectedRows(newSelected)
   }
@@ -59,7 +120,7 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
     return 0
   }) : []
 
-  // 選択された行の合計面積を計算
+  // 選択された行の合計面積を計算（対象林班小班のみ）
   const calculateTotalArea = () => {
     if (selectedRows.size === 0) return 0
     const selectedData = Array.from(selectedRows).map(index => data[index]).filter(Boolean)
@@ -74,7 +135,8 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
 
   const handleExportCSV = () => {
     const headers = ['林班', '小班', '市町村', '面積(ha)', '森林種類', '林種', '樹種', '林齢(年)', '複層区分', '推定材積(m³)', '推定本数(本)']
-    const rows = data.map(row => [
+    // CSV出力は対象林班小班のみ
+    const rows = data.filter(row => isAllowedRow(row)).map(row => [
       row.rinban || '',
       row.shoban || '',
       row.municipalityName || '',
@@ -168,7 +230,11 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
           <thead>
             <tr>
               <th className="col-checkbox">
-                <input type="checkbox" />
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={handleSelectAll}
+                />
               </th>
               <th className="col-sortable col-code" onClick={() => handleSort('rinban')}>
                 <div className="th-content">
@@ -262,13 +328,21 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
           </thead>
           <tbody>
             {sortedData.map((row, index) => {
+              const allowed = isAllowedRow(row)
+              const isLower = row.fukusouKubun && parseInt(row.fukusouKubun) >= 2
+              const rowStyle = allowed
+                ? (selectedRows.has(index) ? { backgroundColor: '#DCFCE7', outline: '1px solid #16A34A' } : {})
+                : { backgroundColor: '#F8FAFC', cursor: 'default' }
+
               return (
-              <tr 
-                key={row.keycode || index} 
-                className={selectedRows.has(index) ? 'selected' : ''}
-                tabIndex={0}
-                onClick={() => handleRowSelect(index)}
+              <tr
+                key={row.keycode ? `${row.keycode}-${index}` : index}
+                style={rowStyle}
+                className={allowed && selectedRows.has(index) ? 'selected' : ''}
+                tabIndex={allowed ? 0 : -1}
+                onClick={() => allowed && handleRowSelect(index)}
                 onKeyDown={(e) => {
+                  if (!allowed) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleRowSelect(index)
@@ -276,37 +350,47 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
                 }}
               >
                 <td className="col-checkbox">
-                  {/* 複層区分が2以上（下層）の場合はチェックボックスを無効化 */}
-                  {row.fukusouKubun && parseInt(row.fukusouKubun) >= 2 ? (
-                    <input 
-                      type="checkbox" 
+                  {!allowed ? (
+                    <input type="checkbox" disabled style={{ opacity: 0, cursor: 'default', pointerEvents: 'none' }} />
+                  ) : isLower ? (
+                    <input
+                      type="checkbox"
                       disabled
                       style={{ opacity: 0.3, cursor: 'not-allowed' }}
                       title="下層は選択できません（上層で選択してください）"
                     />
                   ) : (
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={selectedRows.has(index)}
                       onChange={() => handleRowSelect(index)}
                     />
                   )}
                 </td>
-                <td className="col-code">{row.rinban || '-'}</td>
-                <td className="col-code">{row.shoban || '-'}</td>
-                <td>{row.municipalityName || '-'}</td>
-                <td className="col-numeric">{row.area ? `${row.area}ha` : '-'}</td>
-                <td>{row.forestType || '-'}</td>
-                <td>{row.rinshu || '-'}</td>
-                <td>{row.species || '-'}</td>
-                <td className="col-numeric">{row.age ? `${row.age}年` : '-'}</td>
-                <td>{row.fukusouKubun || '-'}</td>
-                <td className="col-numeric col-estimated">
-                  {row.estimatedVolume != null ? `${row.estimatedVolume.toLocaleString()} m³` : '—'}
-                </td>
-                <td className="col-numeric col-estimated">
-                  {row.estimatedTrees != null ? `${row.estimatedTrees.toLocaleString()} 本` : '—'}
-                </td>
+                {allowed ? (
+                  <>
+                    <td className="col-code">{row.rinban || '-'}</td>
+                    <td className="col-code">{row.shoban || '-'}</td>
+                    <td>{row.municipalityName || '-'}</td>
+                    <td className="col-numeric">{row.area ? `${row.area}ha` : '-'}</td>
+                    <td>{row.forestType || '-'}</td>
+                    <td>{row.rinshu || '-'}</td>
+                    <td>{row.species || '-'}</td>
+                    <td className="col-numeric">{row.age ? `${row.age}年` : '-'}</td>
+                    <td>{row.fukusouKubun || '-'}</td>
+                    <td className="col-numeric col-estimated">
+                      {row.estimatedVolume != null ? `${row.estimatedVolume.toLocaleString()} m³` : '—'}
+                    </td>
+                    <td className="col-numeric col-estimated">
+                      {row.estimatedTrees != null ? `${row.estimatedTrees.toLocaleString()} 本` : '—'}
+                    </td>
+                  </>
+                ) : (
+                  // 対象外行: 全セルを空欄・薄いグレーテキスト
+                  Array.from({ length: 11 }).map((_, i) => (
+                    <td key={i} style={{ color: '#CBD5E1' }}></td>
+                  ))
+                )}
               </tr>
             )})}
           </tbody>
