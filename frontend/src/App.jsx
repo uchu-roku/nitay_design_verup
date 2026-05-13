@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import loginBg from '/images/login-bg.png'
 import L from 'leaflet'
 import Map from './Map'
 import Header from './components/Header'
@@ -82,7 +83,7 @@ function LoginScreen({ onLogin }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
-      backgroundImage: 'url(/images/login-bg.png)',
+      backgroundImage: `url(${loginBg})`,
       backgroundSize: 'cover', backgroundPosition: 'center',
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
