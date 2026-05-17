@@ -268,6 +268,22 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
                   )}
                 </div>
               </th>
+              <th className="col-sortable col-numeric" onClick={() => handleSort('estimatedVolume')}>
+                <div className="th-content">
+                  推定材積
+                  {sortConfig.key === 'estimatedVolume' && (
+                    <AppIcon name={sortConfig.direction === 'asc' ? 'chevronUp' : 'chevronDown'} size="sm" />
+                  )}
+                </div>
+              </th>
+              <th className="col-sortable col-numeric" onClick={() => handleSort('estimatedTrees')}>
+                <div className="th-content">
+                  推定本数
+                  {sortConfig.key === 'estimatedTrees' && (
+                    <AppIcon name={sortConfig.direction === 'asc' ? 'chevronUp' : 'chevronDown'} size="sm" />
+                  )}
+                </div>
+              </th>
               <th className="col-sortable" onClick={() => handleSort('forestType')}>
                 <div className="th-content">
                   森林種類
@@ -304,22 +320,6 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
                 <div className="th-content">
                   複層区分
                   {sortConfig.key === 'fukusouKubun' && (
-                    <AppIcon name={sortConfig.direction === 'asc' ? 'chevronUp' : 'chevronDown'} size="sm" />
-                  )}
-                </div>
-              </th>
-              <th className="col-sortable col-numeric" onClick={() => handleSort('estimatedVolume')}>
-                <div className="th-content">
-                  推定材積
-                  {sortConfig.key === 'estimatedVolume' && (
-                    <AppIcon name={sortConfig.direction === 'asc' ? 'chevronUp' : 'chevronDown'} size="sm" />
-                  )}
-                </div>
-              </th>
-              <th className="col-sortable col-numeric" onClick={() => handleSort('estimatedTrees')}>
-                <div className="th-content">
-                  推定本数
-                  {sortConfig.key === 'estimatedTrees' && (
                     <AppIcon name={sortConfig.direction === 'asc' ? 'chevronUp' : 'chevronDown'} size="sm" />
                   )}
                 </div>
@@ -373,17 +373,17 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
                     <td className="col-code">{row.shoban || '-'}</td>
                     <td>{row.municipalityName || '-'}</td>
                     <td className="col-numeric">{row.area ? `${row.area}ha` : '-'}</td>
-                    <td>{row.forestType || '-'}</td>
-                    <td>{row.rinshu || '-'}</td>
-                    <td>{row.species || '-'}</td>
-                    <td className="col-numeric">{row.age ? `${row.age}年` : '-'}</td>
-                    <td>{row.fukusouKubun || '-'}</td>
                     <td className="col-numeric col-estimated">
                       {row.estimatedVolume != null ? `${row.estimatedVolume.toLocaleString()} m³` : '—'}
                     </td>
                     <td className="col-numeric col-estimated">
                       {row.estimatedTrees != null ? `${row.estimatedTrees.toLocaleString()} 本` : '—'}
                     </td>
+                    <td>{row.forestType || '-'}</td>
+                    <td>{row.rinshu || '-'}</td>
+                    <td>{row.species || '-'}</td>
+                    <td className="col-numeric">{row.age ? `${row.age}年` : '-'}</td>
+                    <td>{row.fukusouKubun || '-'}</td>
                   </>
                 ) : (
                   // 対象外行: 全セルを空欄・薄いグレーテキスト
