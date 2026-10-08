@@ -345,11 +345,17 @@ function App() {
       // メッシュ表示用の樹木位置データを生成
       const mockTreePoints = []
       
-      // メッシュサイズを計算（50m x 50m）
-      const meshSizeM = 50
+      // 広域でも描画負荷を一定に保つ。小範囲では従来の50mを使用する。
+      const maxMeshCells = 5000
+      let meshSizeM = 50
       const avgLat = (minLat + maxLat) / 2
-      const latStep = meshSizeM / 111000
-      const lonStep = meshSizeM / (111000 * Math.cos(avgLat * Math.PI / 180))
+      let latStep = meshSizeM / 111000
+      let lonStep = meshSizeM / (111000 * Math.cos(avgLat * Math.PI / 180))
+      while (Math.ceil((maxLat - minLat) / latStep) * Math.ceil((maxLon - minLon) / lonStep) > maxMeshCells) {
+        meshSizeM = Math.ceil(meshSizeM * 1.2)
+        latStep = meshSizeM / 111000
+        lonStep = meshSizeM / (111000 * Math.cos(avgLat * Math.PI / 180))
+      }
       
       console.log('[App.jsx] メッシュサイズ:', meshSizeM, 'm x', meshSizeM, 'm')
       console.log('[App.jsx] 解析範囲:', { minLat, maxLat, minLon, maxLon })
@@ -399,7 +405,12 @@ function App() {
         volume_m3: Math.round(totalVolume),
         tree_points: mockTreePoints, // メッシュ表示用
         polygon_coords: polygonCoords, // ポリゴン座標を保存
-        warnings: ['境界付近の樹木は検出精度が低下する可能性があります', 'MVP版：簡易シミュレーションです']
+        mesh_size_m: meshSizeM,
+        warnings: [
+          '境界付近の樹木は検出精度が低下する可能性があります',
+          'MVP版：簡易シミュレーションです',
+          ...(meshSizeM > 50 ? [`広い範囲のため、表示メッシュを約${meshSizeM}m四方に調整しました。`] : [])
+        ]
       }
       
       setAnalysisResult(mockResult)
@@ -1313,6 +1324,7 @@ function App() {
               onHasShapeChange={(hasShape) => console.log('[App.jsx] 図形描画状態:', hasShape)}
               treePoints={treePoints}
               polygonCoords={analysisResult?.polygon_coords}
+              meshSizeM={analysisResult?.mesh_size_m}
               sapporoBounds={analysisResult?.sapporo_bounds}
               imageBounds={imageBounds}
               fileId={selectedImageId}

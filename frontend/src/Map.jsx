@@ -52,6 +52,7 @@ function Map({
   zoomToImage, 
   treePoints, 
   polygonCoords, 
+  meshSizeM = 500,
   sapporoBounds, 
   mode, 
   onClearResults, 
@@ -1618,20 +1619,21 @@ function Map({
 
       // 材積の範囲を計算
       const volumes = treePoints.map(p => p.volume)
-      const maxVolume = Math.max(...volumes)
-      const minVolume = Math.min(...volumes)
+      // 配列を引数展開すると、大量データでブラウザーの引数上限を超える。
+      const maxVolume = volumes.reduce((max, value) => Math.max(max, value), -Infinity)
+      const minVolume = volumes.reduce((min, value) => Math.min(min, value), Infinity)
       console.log(`材積範囲: ${minVolume.toFixed(2)} - ${maxVolume.toFixed(2)} m³`)
 
       // 全体の範囲を計算
       const lats = treePoints.map(p => p.lat)
       const lons = treePoints.map(p => p.lon)
-      const minLat = Math.min(...lats)
-      const maxLat = Math.max(...lats)
-      const minLon = Math.min(...lons)
-      const maxLon = Math.max(...lons)
+      const minLat = lats.reduce((min, value) => Math.min(min, value), Infinity)
+      const maxLat = lats.reduce((max, value) => Math.max(max, value), -Infinity)
+      const minLon = lons.reduce((min, value) => Math.min(min, value), Infinity)
+      const maxLon = lons.reduce((max, value) => Math.max(max, value), -Infinity)
       
-      // 固定のメッシュサイズを使用（500m x 500m - App.jsxと同じサイズ）
-      const meshSizeM = 500 // 500メートル四方のメッシュ（App.jsxと一致）
+      // メッシュの表示サイズ（範囲描画以外は従来の500mを使用）
+      // 範囲描画の解析では生成側のメッシュサイズに合わせる。
       console.log(`メッシュサイズ: ${meshSizeM}m x ${meshSizeM}m`)
       
       // 全体の範囲に対して統一されたメッシュサイズを使用
@@ -1724,7 +1726,7 @@ function Map({
     } else {
       console.log('[Map.jsx] treePointsが空またはundefined:', treePoints)
     }
-  }, [treePoints, polygonCoords])
+  }, [treePoints, polygonCoords, meshSizeM])
 
   // 札幌市の範囲を表示（チャットボットモード用）
   useEffect(() => {
