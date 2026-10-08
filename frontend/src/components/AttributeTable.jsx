@@ -3,25 +3,16 @@ import AppIcon from './AppIcon'
 import Button from './ui/Button'
 import Badge from './ui/Badge'
 
-// MOC版表示マスキング: 許可された林班小班のキーコード（北斗市 林班54-小班8, 林班55-小班76）
-const ALLOWED_COMPARTMENT_KEYS = new Set([
-  '01050000540008',
-  '01050000550076',
-])
-
-const isAllowedRow = (row) => row.keycode && ALLOWED_COMPARTMENT_KEYS.has(row.keycode)
-
 const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) => {
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
 
-  // データが変更されたら、許可済み林班小班かつ複層区分1の行のみを自動選択
+  // データが変更されたら、下層以外の行を自動選択
   useEffect(() => {
     if (data && data.length > 0) {
       const selectableIndices = new Set(
         data
           .map((row, index) => {
-            if (!isAllowedRow(row)) return null
             if (row.fukusouKubun && parseInt(row.fukusouKubun) >= 2) return null
             return index
           })
@@ -35,7 +26,6 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
 
   const selectableIndices = data
     ? data.map((row, i) => {
-        if (!isAllowedRow(row)) return null
         if (row.fukusouKubun && parseInt(row.fukusouKubun) >= 2) return null
         return i
       }).filter(i => i !== null)
@@ -73,8 +63,7 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
 
   const handleRowSelect = (id) => {
     const row = data[id]
-    // 対象外林班小班は選択不可
-    if (!row || !isAllowedRow(row)) return
+    if (!row) return
     // 複層区分が2以上（下層）の場合は選択不可
     if (row.fukusouKubun && parseInt(row.fukusouKubun) >= 2) {
       return
@@ -120,7 +109,7 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
     return 0
   }) : []
 
-  // 選択された行の合計面積を計算（対象林班小班のみ）
+  // 選択された行の合計面積を計算
   const calculateTotalArea = () => {
     if (selectedRows.size === 0) return 0
     const selectedData = Array.from(selectedRows).map(index => data[index]).filter(Boolean)
@@ -135,8 +124,7 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
 
   const handleExportCSV = () => {
     const headers = ['林班', '小班', '市町村', '面積(ha)', '森林種類', '林種', '樹種', '林齢(年)', '複層区分', '推定材積(m³)', '推定本数(本)']
-    // CSV出力は対象林班小班のみ
-    const rows = data.filter(row => isAllowedRow(row)).map(row => [
+    const rows = data.map(row => [
       row.rinban || '',
       row.shoban || '',
       row.municipalityName || '',
@@ -328,21 +316,17 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
           </thead>
           <tbody>
             {sortedData.map((row, index) => {
-              const allowed = isAllowedRow(row)
               const isLower = row.fukusouKubun && parseInt(row.fukusouKubun) >= 2
-              const rowStyle = allowed
-                ? (selectedRows.has(index) ? { backgroundColor: '#DCFCE7', outline: '1px solid #16A34A' } : {})
-                : { backgroundColor: '#F8FAFC', cursor: 'default' }
+              const rowStyle = selectedRows.has(index) ? { backgroundColor: '#DCFCE7', outline: '1px solid #16A34A' } : {}
 
               return (
               <tr
                 key={row.keycode ? `${row.keycode}-${index}` : index}
                 style={rowStyle}
-                className={allowed && selectedRows.has(index) ? 'selected' : ''}
-                tabIndex={allowed ? 0 : -1}
-                onClick={() => allowed && handleRowSelect(index)}
+                className={selectedRows.has(index) ? 'selected' : ''}
+                tabIndex={0}
+                onClick={() => handleRowSelect(index)}
                 onKeyDown={(e) => {
-                  if (!allowed) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleRowSelect(index)
@@ -350,9 +334,7 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
                 }}
               >
                 <td className="col-checkbox">
-                  {!allowed ? (
-                    <input type="checkbox" disabled style={{ opacity: 0, cursor: 'default', pointerEvents: 'none' }} />
-                  ) : isLower ? (
+                  {isLower ? (
                     <input
                       type="checkbox"
                       disabled
@@ -367,7 +349,6 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
                     />
                   )}
                 </td>
-                {allowed ? (
                   <>
                     <td className="col-code">{row.rinban || '-'}</td>
                     <td className="col-code">{row.shoban || '-'}</td>
@@ -385,12 +366,6 @@ const AttributeTable = ({ data, isResizing, onResizeStart, onAnalyzeSelected }) 
                     <td className="col-numeric">{row.age ? `${row.age}年` : '-'}</td>
                     <td>{row.fukusouKubun || '-'}</td>
                   </>
-                ) : (
-                  // 対象外行: 全セルを空欄・薄いグレーテキスト
-                  Array.from({ length: 11 }).map((_, i) => (
-                    <td key={i} style={{ color: '#CBD5E1' }}></td>
-                  ))
-                )}
               </tr>
             )})}
           </tbody>
